@@ -143,7 +143,7 @@ class Pocket(BasicNewsRecipe):
                 self.reauthorize()
             raise e
 
-    def create_get_article_request(self):
+    def create_get_articles_request(self):
         args = [
             '"consumer_key":"{0}"'.format(self.consumer_key),
             '"access_token":"{0}"'.format(self.config.token),
@@ -164,7 +164,7 @@ class Pocket(BasicNewsRecipe):
         assert self.config.state == PocketConfig.AuthState.Authorized, "Not yet authorized"
         assert self.config.token, "No access token"
         request = mechanize.Request("https://getpocket.com/v3/get",
-                (self.create_get_article_request()),
+                (self.create_get_articles_request()),
                 headers = {
                     'Content-Type': 'application/json; charset=UTF8',
                     'X-Accept': 'application/json'
