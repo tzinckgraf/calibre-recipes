@@ -77,6 +77,8 @@ class Pocket(BasicNewsRecipe):
     oldest_article = 7
     max_articles_per_feed = 100
     archive_downloaded = True
+    # can only set one tag at a time
+    tag = None
 
     # Inherited developer settings
     auto_cleanup = True
@@ -141,24 +143,28 @@ class Pocket(BasicNewsRecipe):
                 self.reauthorize()
             raise e
 
+    def create_get_article_request(self):
+        args = [
+            '"consumer_key":"{0}"'.format(self.consumer_key),
+            '"access_token":"{0}"'.format(self.config.token),
+            '"since":"{0}"'.format(int(time.time()) - 86400 * self.oldest_article),
+            '"state":"unread"',
+            '"detailType":"complete"',
+            '"sort":"newest"',
+        ]
+
+        if self.max_articles_per_feed:
+            '"count":"{0}"'.format(self.max_articles_per_feed),
+        if self.tag:
+            args.append('"tag":"{0}"'.format(self.tag))
+
+        return u'{{{0}}}'.format(','.join(args))
+
     def parse_index(self):
         assert self.config.state == PocketConfig.AuthState.Authorized, "Not yet authorized"
         assert self.config.token, "No access token"
         request = mechanize.Request("https://getpocket.com/v3/get",
-                (u'{{'
-                    '"consumer_key":"{0}",'
-                    '"access_token":"{1}",'
-                    '"count":"{2}",'
-                    '"since":"{3}",'
-                    '"state":"unread",'
-                    '"detailType":"complete",'
-                    '"sort":"newest"'
-                '}}').format(
-                    self.consumer_key,
-                    self.config.token,
-                    self.max_articles_per_feed,
-                    int(time.time()) - 86400 * self.oldest_article
-                ),
+                (self.create_get_article_request()),
                 headers = {
                     'Content-Type': 'application/json; charset=UTF8',
                     'X-Accept': 'application/json'
